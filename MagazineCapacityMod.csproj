@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>MagazineCapacityMod</AssemblyName>
+    <RootNamespace>MagazineCapacityMod</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="BoneLib" HintPath="References/BoneLib.dll" Private="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Bonelab.GameLibs.Steam" Version="6.0.0" />
+  </ItemGroup>
+</Project>
