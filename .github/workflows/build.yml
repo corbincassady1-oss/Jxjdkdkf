@@ -41,3 +41,31 @@ jobs:
         with:
           name: MagazineCapacityMod
           path: bin/Release/net6.0/MagazineCapacityMod.dll
+
+
+  fusionkick:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 6
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Restore FusionKick
+        run: dotnet restore FusionKick/FusionKick.csproj
+
+      - name: Build FusionKick
+        run: dotnet build FusionKick/FusionKick.csproj -c Release --no-restore
+
+      - name: Verify FusionKick DLL
+        run: test -s FusionKick/FusionKick.dll
+
+      - name: Upload FusionKick DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: FusionKick
+          path: FusionKick/FusionKick.dll
