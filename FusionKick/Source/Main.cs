@@ -25,11 +25,11 @@ public sealed class Main : MelonMod
         try
         {
             BuildMenu();
-            LoggerInstance.Msg("FusionKick loaded.");
+            MelonLogger.Msg("FusionKick loaded.");
         }
         catch (Exception ex)
         {
-            LoggerInstance.Error($"FusionKick initialization failed: {ex}");
+            MelonLogger.Error($"FusionKick initialization failed: {ex}");
         }
     }
 
@@ -40,7 +40,7 @@ public sealed class Main : MelonMod
             var root = GetStaticProperty("BoneLib.BoneMenu.Page", "Root");
             if (root == null)
             {
-                LoggerInstance.Warning("BoneLib BoneMenu is not ready yet.");
+                MelonLogger.Warning("BoneLib BoneMenu is not ready yet.");
                 return;
             }
 
@@ -294,12 +294,12 @@ public sealed class Main : MelonMod
                 throw new MissingMethodException("Fusion PermissionSender.SendPermissionRequest(KICK, PlayerID) was not found.");
 
             method.Invoke(null, new[] { command, player });
-            LoggerInstance.Msg($"Fusion kick request sent for {name}.");
+            MelonLogger.Msg($"Fusion kick request sent for {name}.");
             RefreshMenu();
         }
         catch (Exception ex)
         {
-            LoggerInstance.Error($"Failed to kick {name}: {ex.GetBaseException().Message}");
+            MelonLogger.Error($"Failed to kick {name}: {ex.GetBaseException().Message}");
         }
     }
 
@@ -342,7 +342,7 @@ public sealed class Main : MelonMod
         }
         catch (Exception ex)
         {
-            LoggerInstance.Error($"Failed to read Fusion players: {ex.GetBaseException().Message}");
+            MelonLogger.Error($"Failed to read Fusion players: {ex.GetBaseException().Message}");
         }
 
         return result;
