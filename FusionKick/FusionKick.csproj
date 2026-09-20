@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>FusionKick</AssemblyName>
+    <RootNamespace>FusionKick</RootNamespace>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LavaGang.MelonLoader" Version="0.6.5" />
+  </ItemGroup>
+
+  <Target Name="CopyOutputToRoot" AfterTargets="Build">
+    <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(ProjectDir)FusionKick.dll" OverwriteReadOnlyFiles="true" />
+  </Target>
+</Project>
