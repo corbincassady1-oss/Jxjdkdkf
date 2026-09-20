@@ -67,13 +67,6 @@ public sealed class Main : MelonMod
                 return;
             }
 
-            if (!IsFusionHost())
-            {
-                AddFunction("Host only", null);
-                AddFunction("Refresh", RefreshMenu);
-                return;
-            }
-
             var players = GetPlayers();
             if (players.Count == 0)
             {
@@ -271,7 +264,7 @@ public sealed class Main : MelonMod
         try
         {
             var fusion = FusionAssembly;
-            if (fusion == null || !IsFusionHost())
+            if (fusion == null)
                 return;
 
             var senderType = fusion.GetType("LabFusion.Senders.PermissionSender", throwOnError: true);
