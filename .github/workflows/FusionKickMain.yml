@@ -1,0 +1,38 @@
+name: Build FusionKick
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'FusionKick/**'
+      - '.github/workflows/FusionKickMain.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 6
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Restore
+        run: dotnet restore FusionKick/FusionKick.csproj
+
+      - name: Build
+        run: dotnet build FusionKick/FusionKick.csproj -c Release --no-restore
+
+      - name: Verify DLL
+        run: test -s FusionKick/FusionKick.dll
+
+      - name: Upload DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: FusionKick
+          path: FusionKick/FusionKick.dll
