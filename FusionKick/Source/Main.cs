@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using BoneLib.BoneMenu;
 using MelonLoader;
 
 [assembly: MelonInfo(typeof(FusionKick.Main), "FusionKick", "1.0.0", "OpenAI")]
