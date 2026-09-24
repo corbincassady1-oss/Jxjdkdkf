@@ -31,16 +31,19 @@ jobs:
           test -s bin/Release/net6.0/AvaLoader.dll
           sha256sum bin/Release/net6.0/AvaLoader.dll
 
-      - name: Encode built DLL
+      - name: Create install package
         run: |
-          mkdir -p dist
-          base64 -w 0 bin/Release/net6.0/AvaLoader.dll > dist/AvaLoader.dll.b64
-          sha256sum bin/Release/net6.0/AvaLoader.dll > dist/AvaLoader.sha256
+          rm -rf package
+          mkdir -p "package/Mods"
+          mkdir -p "package/AvaLoader Avatar Folder"
+          cp bin/Release/net6.0/AvaLoader.dll "package/Mods/AvaLoader.dll"
+          cp "AvaLoader Avatar Folder/README.txt" "package/AvaLoader Avatar Folder/README.txt"
+          (cd package && zip -qr ../AvaLoader-1.0.0.zip .)
 
-      - name: Upload DLL artifact
+      - name: Upload AvaLoader package
         uses: actions/upload-artifact@v4
         with:
           name: AvaLoader-1.0.0
           path: |
+            AvaLoader-1.0.0.zip
             bin/Release/net6.0/AvaLoader.dll
-            dist/AvaLoader.sha256
