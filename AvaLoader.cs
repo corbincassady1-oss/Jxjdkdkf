@@ -90,9 +90,7 @@ namespace AvaLoader
 
         private void RebuildMenu()
         {
-            if (_avatarPage == null)
-                return;
-
+            if (_avatarPage == null) return;
             try
             {
                 var removeAll = _avatarPage.GetType().GetMethod("RemoveAll", Type.EmptyTypes);
@@ -103,12 +101,12 @@ namespace AvaLoader
             AddFunction("Refresh Avatar List", RefreshAvatars);
 
             var folders = Directory.Exists(AvatarSourcePath)
-                ? Directory.GetDirectories(AvatarSourcePath).OrderBy(Path.GetFileName).ToArray()
+                ? Directory.GetDirectories(AvatarSourcePath).Where(IsPackedAvatarFolder).OrderBy(Path.GetFileName).ToArray()
                 : Array.Empty<string>();
 
             if (folders.Length == 0)
             {
-                AddFunction("No avatar folders found", () => { });
+                AddFunction("No packed avatars found", () => { });
                 AddFunction("Folder: " + FolderName, () => { });
                 return;
             }
@@ -126,12 +124,9 @@ namespace AvaLoader
             try
             {
                 var colorType = FindType("UnityEngine.Color");
-                var color = colorType == null ? null : Activator.CreateInstance(
-                    colorType, new object[] { 0.25f, 0.75f, 1f, 1f });
-
+                var color = colorType == null ? null : Activator.CreateInstance(colorType, new object[] { 0.25f, 0.75f, 1f, 1f });
                 var method = _avatarPage.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
                     .FirstOrDefault(m => m.Name == "CreateFunction" && m.GetParameters().Length == 3);
-
                 method?.Invoke(_avatarPage, new object[] { label, color, action });
             }
             catch (Exception ex)
@@ -152,18 +147,21 @@ namespace AvaLoader
             {
                 var name = Path.GetFileName(source);
                 var destination = Path.Combine(ModsPath, name);
-
                 CopyDirectory(source, destination);
                 MelonLogger.Msg("[AvaLoader] Installed avatar package: " + name);
 
+                var barcode = TryReadAvatarBarcode(source);
                 if (!TryReloadWarehouse())
                 {
-                    MelonLogger.Warning("[AvaLoader] Asset Warehouse reload was not available. Restart BONELAB if the avatar does not appear.");
+                    MelonLogger.Warning("[AvaLoader] No runtime Asset Warehouse reload method was found. The package is installed; restart BONELAB to register it.");
+                    return;
                 }
+
+                MelonLogger.Msg("[AvaLoader] Asset Warehouse reload requested.");
+                if (!string.IsNullOrEmpty(barcode))
+                    _ = SwapWhenAvailable(barcode);
                 else
-                {
-                    MelonLogger.Msg("[AvaLoader] Asset Warehouse reload requested.");
-                }
+                    MelonLogger.Warning("[AvaLoader] Could not read an avatar barcode from the pallet JSON.");
             }
             catch (Exception ex)
             {
@@ -173,54 +171,113 @@ namespace AvaLoader
 
         private bool TryReloadWarehouse()
         {
-            // Prefer the game's AssetWarehouse reload method if exposed.
             try
             {
                 var aw = FindType("Il2CppSLZ.Marrow.Warehouse.AssetWarehouse");
-                if (aw != null)
+                if (aw == null) return false;
+                var instanceProp = aw.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static);
+                var instance = instanceProp?.GetValue(null);
+
+                foreach (var m in aw.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
                 {
-                    var instanceProp = aw.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static);
-                    var instance = instanceProp?.GetValue(null);
-                    if (instance != null)
+                    if (m.GetParameters().Length != 0) continue;
+                    if (!Regex.IsMatch(m.Name, "^(Reload|Refresh|Rescan|LoadMods|LoadPallets|LoadAll|Initialize)$", RegexOptions.IgnoreCase)) continue;
+                    try
                     {
-                        foreach (var m in aw.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
-                        {
-                            if (!m.Name.IndexOf("Reload", StringComparison.OrdinalIgnoreCase).Equals(-1) &&
-                                m.GetParameters().Length == 0)
-                            {
-                                try
-                                {
-                                    m.Invoke(m.IsStatic ? null : instance, null);
-                                    return true;
-                                }
-                                catch { }
-                            }
-                        }
+                        m.Invoke(m.IsStatic ? null : instance, null);
+                        return true;
                     }
-                }
-            }
-            catch { }
-
-            // Fallback: BONELAB Developer Mode exposes aw.reload over its local WebSocket.
-            _ = SendReloadCommand();
-            return true;
-        }
-
-        private async Task SendReloadCommand()
-        {
-            try
-            {
-                using (var ws = new ClientWebSocket())
-                {
-                    await ws.ConnectAsync(new Uri("ws://127.0.0.1:50152/console"), default);
-                    var bytes = Encoding.UTF8.GetBytes("aw.reload");
-                    await ws.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, default);
-                    await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "AvaLoader", default);
+                    catch { }
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning("[AvaLoader] Runtime reload unavailable: " + ex.Message);
+                MelonLogger.Warning("[AvaLoader] Warehouse reload reflection failed: " + ex.Message);
+            }
+            return false;
+        }
+
+        private async Task SwapWhenAvailable(string barcode)
+        {
+            for (var i = 0; i < 30; i++)
+            {
+                if (TrySwapAvatar(barcode))
+                {
+                    MelonLogger.Msg("[AvaLoader] Avatar swap requested: " + barcode);
+                    return;
+                }
+                await Task.Delay(500);
+            }
+            MelonLogger.Warning("[AvaLoader] Avatar was installed but the crate was not available for swapping. Restart BONELAB once, then use AvaLoader again.");
+        }
+
+        private bool TrySwapAvatar(string barcode)
+        {
+            try
+            {
+                var playerType = FindType("BoneLib.Player");
+                var rigProp = playerType?.GetProperty("RigManager", BindingFlags.Public | BindingFlags.Static);
+                var rig = rigProp?.GetValue(null);
+                if (rig == null) return false;
+
+                foreach (var method in rig.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance))
+                {
+                    if (method.Name != "SwapAvatarCrate") continue;
+                    var p = method.GetParameters();
+                    if (p.Length != 3 || p[1].ParameterType != typeof(bool)) continue;
+
+                    object barcodeArg;
+                    if (p[0].ParameterType == typeof(string))
+                        barcodeArg = barcode;
+                    else
+                    {
+                        var ctor = p[0].ParameterType.GetConstructor(new[] { typeof(string) });
+                        if (ctor == null) continue;
+                        barcodeArg = ctor.Invoke(new object[] { barcode });
+                    }
+
+                    object callback;
+                    if (p[2].ParameterType == typeof(Action<bool>))
+                        callback = new Action<bool>(ok => MelonLogger.Msg("[AvaLoader] Swap result: " + ok));
+                    else if (p[2].ParameterType == typeof(Action))
+                        callback = new Action(() => { });
+                    else
+                        continue;
+
+                    method.Invoke(rig, new object[] { barcodeArg, true, callback });
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning("[AvaLoader] Swap failed: " + ex.Message);
+            }
+            return false;
+        }
+
+        private static bool IsPackedAvatarFolder(string folder)
+        {
+            try
+            {
+                return Directory.GetFiles(folder, "*.pallet.json", SearchOption.TopDirectoryOnly).Length > 0;
+            }
+            catch { return false; }
+        }
+
+        private static string TryReadAvatarBarcode(string folder)
+        {
+            try
+            {
+                var pallet = Directory.GetFiles(folder, "*.pallet.json", SearchOption.TopDirectoryOnly).FirstOrDefault();
+                if (pallet == null) return null;
+                var json = File.ReadAllText(pallet);
+                var avatar = Regex.Match(json, @"""barcode""\s*:\s*""([^""]*\.Avatar\.[^""]+)""", RegexOptions.IgnoreCase);
+                return avatar.Success ? avatar.Groups[1].Value : null;
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning("[AvaLoader] Could not parse pallet JSON: " + ex.Message);
+                return null;
             }
         }
 
