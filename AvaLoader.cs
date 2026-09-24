@@ -243,57 +243,5 @@ namespace AvaLoader
             catch { return false; }
         }
 
-        private static string TryReadAvatarBarcode(string folder)
-        {
-            try
-            {
-                var pallet = Directory.GetFiles(folder, "*.pallet.json", SearchOption.TopDirectoryOnly).FirstOrDefault();
-                if (pallet == null) return null;
-                var json = File.ReadAllText(pallet);
-                var avatar = Regex.Match(json, @"""barcode""\s*:\s*""([^""]*\.Avatar\.[^""]+)""", RegexOptions.IgnoreCase);
-                return avatar.Success ? avatar.Groups[1].Value : null;
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Warning("[AvaLoader] Could not parse pallet JSON: " + ex.Message);
-                return null;
-            }
-        }
-
-        private static void CopyDirectory(string source, string destination)
-        {
-            Directory.CreateDirectory(destination);
-
-            foreach (var file in Directory.GetFiles(source))
-            {
-                var target = Path.Combine(destination, Path.GetFileName(file));
-                File.Copy(file, target, true);
-            }
-
-            foreach (var dir in Directory.GetDirectories(source))
-            {
-                CopyDirectory(dir, Path.Combine(destination, Path.GetFileName(dir)));
-            }
-        }
-
-        private static string TrimName(string name)
-        {
-            return name.Length <= 42 ? name : name.Substring(0, 39) + "...";
-        }
-
-        private static Type FindType(string fullName)
-        {
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                try
-                {
-                    var type = asm.GetType(fullName, false);
-                    if (type != null)
-                        return type;
-                }
-                catch { }
-            }
-            return null;
-        }
     }
 }
