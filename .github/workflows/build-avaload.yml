@@ -1,0 +1,47 @@
+name: Build AvaLoader
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Download MelonLoader 0.6.6
+        run: |
+          mkdir -p refs
+          curl -L --fail --retry 3 "https://thunderstore.io/package/download/LavaGang/MelonLoader/0.6.6/" -o /tmp/melonloader.zip
+          unzip -q /tmp/melonloader.zip -d /tmp/melonloader
+          find /tmp/melonloader -name MelonLoader.dll -type f -exec cp {} refs/MelonLoader.dll \;
+          test -s refs/MelonLoader.dll
+
+      - name: Build AvaLoader
+        run: dotnet build AvaLoader.csproj -c Release
+
+      - name: Verify
+        run: |
+          test -s bin/Release/net6.0/AvaLoader.dll
+          sha256sum bin/Release/net6.0/AvaLoader.dll
+
+      - name: Encode built DLL
+        run: |
+          mkdir -p dist
+          base64 -w 0 bin/Release/net6.0/AvaLoader.dll > dist/AvaLoader.dll.b64
+          sha256sum bin/Release/net6.0/AvaLoader.dll > dist/AvaLoader.sha256
+
+      - name: Commit built payload
+        run: |
+          git config user.name "AvaLoader Builder"
+          git config user.email "actions@users.noreply.github.com"
+          git add dist/
+          git diff --cached --quiet && exit 0
+          git commit -m "Build AvaLoader DLL"
+          git push
