@@ -233,15 +233,5 @@ namespace AvaLoader
             return null;
         }
     }
-
-(string folder)
-        {
-            try
-            {
-                return Directory.GetFiles(folder, "*.pallet.json", SearchOption.TopDirectoryOnly).Length > 0;
-            }
-            catch { return false; }
-        }
-
     }
 }
