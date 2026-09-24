@@ -4,10 +4,12 @@
     <AssemblyName>AvaLoader</AssemblyName>
     <RootNamespace>AvaLoader</RootNamespace>
     <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <ImplicitUsings>disable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AvaLoader.cs" />
     <Reference Include="MelonLoader">
       <HintPath>refs/MelonLoader.dll</HintPath>
       <Private>false</Private>
