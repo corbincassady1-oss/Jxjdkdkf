@@ -1,0 +1,1 @@
+Put already-packed BONELAB avatar mod folders here. Example: AvaLoader Avatar Folder\Randomavatar\... Then use BoneMenu > AvaLoader > Refresh Avatar List and select Load: Randomavatar.
