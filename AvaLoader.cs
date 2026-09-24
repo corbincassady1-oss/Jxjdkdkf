@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.RegularExpressions;
 using MelonLoader;
 
 [assembly: MelonInfo(typeof(AvaLoader.AvaLoaderMod), "AvaLoader", "1.0.0", "OpenAI")]
