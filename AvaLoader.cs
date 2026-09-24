@@ -233,5 +233,4 @@ namespace AvaLoader
             return null;
         }
     }
-    }
 }
