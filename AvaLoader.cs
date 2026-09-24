@@ -233,7 +233,8 @@ namespace AvaLoader
             return null;
         }
     }
-}        private static bool IsPackedAvatarFolder(string folder)
+
+(string folder)
         {
             try
             {
