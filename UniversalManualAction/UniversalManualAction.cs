@@ -110,7 +110,7 @@ namespace UniversalManualAction
                 return;
             }
 
-            if (_requireGrip && !IsGripHeld(handId))
+            if (_requireGrip.Value && !IsGripHeld(handId))
             {
                 ResetState(handId, hand.transform.position);
                 return;
