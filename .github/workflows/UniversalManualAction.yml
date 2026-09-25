@@ -1,0 +1,46 @@
+name: Build Universal Manual Action
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'UniversalManualAction/**'
+      - '.github/workflows/UniversalManualAction.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 6
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Download BoneLib 3.2.2
+        shell: bash
+        run: |
+          mkdir -p References
+          curl -L --fail --retry 3 "https://thunderstore.io/package/download/bonelib/BoneLib/3.2.2/" -o /tmp/bonelib.zip
+          unzip -o /tmp/bonelib.zip -d /tmp/bonelib
+          find /tmp/bonelib -name BoneLib.dll -exec cp {} References/BoneLib.dll \;
+          test -s References/BoneLib.dll
+
+      - name: Restore
+        run: dotnet restore UniversalManualAction/UniversalManualAction.csproj
+
+      - name: Build
+        run: dotnet build UniversalManualAction/UniversalManualAction.csproj -c Release --no-restore
+
+      - name: Verify DLL
+        run: test -s UniversalManualAction/bin/Release/net6.0/UniversalManualAction.dll
+
+      - name: Upload DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: UniversalManualAction
+          path: UniversalManualAction/bin/Release/net6.0/UniversalManualAction.dll
