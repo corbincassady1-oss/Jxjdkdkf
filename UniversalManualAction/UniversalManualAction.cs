@@ -27,6 +27,7 @@ namespace UniversalManualAction
 
         private sealed class HandState
         {
+            public int GunId;
             public Vector3 LastPosition;
             public Vector3 GunAxis;
             public bool Initialized;
@@ -88,7 +89,7 @@ namespace UniversalManualAction
             }
         }
 
-        private void ProcessHand(Hand hand, int handId)
+        private void ProcessHand(Il2CppSLZ.Marrow.Hand hand, int handId)
         {
             if (hand == null)
                 return;
@@ -115,11 +116,11 @@ namespace UniversalManualAction
                 return;
             }
 
-            int key = gun.GetInstanceID() ^ (handId * 7919);
+            int key = handId;
             HandState state;
-            if (!_states.TryGetValue(key, out state))
+            if (!_states.TryGetValue(key, out state) || state.GunId != gun.GetInstanceID())
             {
-                state = new HandState();
+                state = new HandState { GunId = gun.GetInstanceID() };
                 _states[key] = state;
             }
 
@@ -238,23 +239,7 @@ namespace UniversalManualAction
 
         private void ResetState(int handId, Vector3 position)
         {
-            List<int> remove = null;
-
-            foreach (KeyValuePair<int, HandState> pair in _states)
-            {
-                if ((pair.Key ^ (handId * 7919)) == pair.Key)
-                {
-                    if (remove == null)
-                        remove = new List<int>();
-                    remove.Add(pair.Key);
-                }
-            }
-
-            if (remove != null)
-            {
-                foreach (int key in remove)
-                    _states.Remove(key);
-            }
+            _states.Remove(handId);
         }
 
         private void ResetTracking()
