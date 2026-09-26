@@ -77,7 +77,7 @@ namespace healthregentoggle
 
                 _lastHealth = current;
 
-                if (!GetBool(_enableRegen, true) || current >= max)
+                if (!GetBoolSetting(_enableRegen, true) || current >= max)
                     return;
 
                 if (_clock.Elapsed.TotalSeconds < _nextHealAt)
@@ -365,6 +365,19 @@ namespace healthregentoggle
                     BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
                 return p == null ? fallback : Convert.ToSingle(p.GetValue(entry));
+            }
+            catch { return fallback; }
+        }
+
+        private static bool GetBoolSetting(object entry, bool fallback)
+        {
+            try
+            {
+                PropertyInfo p = entry?.GetType().GetProperty(
+                    "Value",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+                return p == null ? fallback : Convert.ToBoolean(p.GetValue(entry));
             }
             catch { return fallback; }
         }
