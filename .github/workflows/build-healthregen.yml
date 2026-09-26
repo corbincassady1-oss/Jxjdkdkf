@@ -1,0 +1,34 @@
+name: Build HealthRegenToggle
+
+on:
+  push:
+    branches: [healthregen-customizable]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Build
+        run: dotnet build HealthRegenToggle/HealthRegenToggle.csproj -c Release --nologo
+
+      - name: Prepare mod
+        run: |
+          mkdir -p artifact
+          cp HealthRegenToggle/bin/Release/net6.0/HealthRegenToggle.dll artifact/HealthRegenToggle.dll
+          cat > artifact/README.txt <<'EOF'
+          HealthRegenToggle 3.1.0
+          BoneMenu: Enable Regeneration, Enable Damage Vignette, Healing Delay, Regen Speed, Health Regen.
+          Requires BoneLib/JLib and MelonLoader.
+          EOF
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HealthRegenToggle-Customizable
+          path: artifact/
